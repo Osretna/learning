@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>مذاكرتي 🎓 — مساعدك الذكي في كل المواد والمراحل</title>
+<meta name="theme-color" content="#4a90d9">
+<meta name="description" content="منصة تفاعلية للشرح والأسئلة بصوت وصورة لجميع المراحل الدراسية">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f7fa; --card:#ffffff; --text:#1e2a38; --muted:#6b7a8d;
+  --primary:#4a90d9; --good:#2ecc71; --bad:#e74c3c; --gold:#f1c40f;
+  --shadow:0 4px 18px rgba(30,42,56,.10);
+}
+body.dark{
+  --bg:#12181f; --card:#1c2630; --text:#e8eef5; --muted:#93a5b8;
+  --shadow:0 4px 18px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html{font-size:16px;}
+body{
+  margin:0; font-family:'Cairo',sans-serif; background:var(--bg); color:var(--text);
+  min-height:100vh; transition:background .3s, color .3s;
+}
+/* ====== الشريط العلوي ====== */
+header{
+  position:sticky; top:0; z-index:50; background:var(--card);
+  display:flex; align-items:center; gap:8px; padding:10px 14px;
+  box-shadow:var(--shadow); flex-wrap:wrap;
+}
+header .logo{font-weight:900; font-size:1.15rem; color:var(--primary); cursor:pointer; white-space:nowrap;}
+.hbtn{
+  border:none; background:var(--bg); color:var(--text); border-radius:12px;
+  min-height:44px; padding:6px 12px; font-family:inherit; font-size:.95rem; font-weight:700;
+  cursor:pointer; transition:transform .15s;
+}
+.hbtn:active{transform:scale(.92);}
+header .spacer{flex:1;}
+.badge{background:var(--gold); color:#5c4400; border-radius:999px; padding:4px 12px; font-weight:900; font-size:.9rem; white-space:nowrap;}
+.badge.fire{background:#ff7a45; color:#fff;}
+/* ====== الحاوية ====== */
+main{max-width:900px; margin:0 auto; padding:18px 14px 60px;}
+.screen{display:none; animation:fadeIn .35s ease;}
+.screen.active{display:block;}
+@keyframes fadeIn{from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;}}
+@keyframes pop{0%{transform:scale(.7);} 60%{transform:scale(1.12);} 100%{transform:scale(1);}}
+@keyframes confettiFall{to{transform:translateY(105vh) rotate(720deg); opacity:.6;}}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);}}
+/* ====== البطاقات ====== */
+.card{
+  background:var(--card); border-radius:18px; box-shadow:var(--shadow);
+  padding:22px 18px; margin-bottom:14px;
+}
+.grid{display:grid; gap:14px;}
+.grid.stages{grid-template-columns:1fr;}
+@media(min-width:640px){ .grid.stages{grid-template-columns:repeat(3,1fr);} .grid.subjects{grid-template-columns:repeat(4,1fr);} }
+.grid.subjects{grid-template-columns:repeat(2,1fr);}
+.big-btn{
+  border:none; border-radius:18px; padding:26px 14px; cursor:pointer;
+  font-family:inherit; font-weight:900; font-size:1.15rem; color:#fff;
+  min-height:96px; box-shadow:var(--shadow); transition:transform .15s;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+}
+.big-btn:active{transform:scale(.95);}
+.big-btn .ic{font-size:2rem;}
+.stage-name{font-size:1.05rem;}
+h1.page-title{font-size:1.5rem; margin:6px 0 16px; font-weight:900;}
+.back-link{
+  display:inline-flex; align-items:center; gap:6px; background:none; border:none;
+  color:var(--primary); font-family:inherit; font-weight:700; font-size:1rem;
+  cursor:pointer; margin-bottom:10px; min-height:44px; padding:4px 8px;
+}
+/* قائمة الدروس */
+.lesson-item{
+  display:flex; align-items:center; gap:14px; width:100%; text-align:right;
+  background:var(--card); border:none; border-radius:16px; box-shadow:var(--shadow);
+  padding:16px; margin-bottom:12px; cursor:pointer; font-family:inherit; color:var(--text);
+  transition:transform .15s;
+}
+.lesson-item:active{transform:scale(.97);}
+.lesson-item .num{
+  width:44px; height:44px; border-radius:12px; color:#fff; font-weight:900;
+  display:flex; align-items:center; justify-content:center; font-size:1.05rem; flex-shrink:0;
+}
+.lesson-item .lt{font-weight:700; font-size:1.05rem; flex:1;}
+.lesson-item .done{color:var(--good); font-size:1.3rem; font-weight:900;}
+.lesson-item .qcount{color:var(--muted); font-size:.85rem;}
+/* شاشة الدرس */
+.lesson-body p{font-size:1.08rem; line-height:2; margin:0 0 14px;}
+.lesson-title-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;}
+.lesson-title-row h2{margin:0; font-size:1.3rem; flex:1;}
+.pill{background:var(--bg); border-radius:999px; padding:4px 14px; font-size:.85rem; font-weight:700; color:var(--muted);}
+.action-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;}
+.btn{
+  border:none; border-radius:14px; padding:13px 22px; font-family:inherit;
+  font-weight:900; font-size:1rem; cursor:pointer; min-height:50px;
+  transition:transform .15s; flex:1; min-width:140px;
+}
+.btn:active{transform:scale(.95);}
+.btn.primary{background:var(--primary); color:#fff;}
+.btn.soft{background:var(--bg); color:var(--text);}
+.btn.good{background:var(--good); color:#fff;}
+.btn:disabled{opacity:.5; cursor:not-allowed;}
+/* الأسئلة */
+.progressbar{height:10px; background:var(--bg); border-radius:99px; overflow:hidden; margin-bottom:18px;}
+.progressbar i{display:block; height:100%; background:var(--primary); border-radius:99px; transition:width .4s;}
+.q-text{font-size:1.25rem; font-weight:900; margin:0 0 18px; line-height:1.8;}
+.opt{
+  display:block; width:100%; text-align:right; background:var(--card); color:var(--text);
+  border:2px solid var(--bg); border-radius:14px; padding:15px 16px; margin-bottom:10px;
+  font-family:inherit; font-size:1.05rem; font-weight:700; cursor:pointer; min-height:52px;
+  transition:all .2s;
+}
+.opt:hover{border-color:var(--primary);}
+.opt.correct{background:var(--good); border-color:var(--good); color:#fff; animation:pop .35s;}
+.opt.wrong{background:var(--bad); border-color:var(--bad); color:#fff; animation:shake .35s;}
+.opt:disabled{cursor:default;}
+.explain{
+  background:rgba(241,196,15,.15); border-right:4px solid var(--gold);
+  border-radius:10px; padding:12px 14px; margin:14px 0; font-size:.98rem; line-height:1.9;
+}
+.explain.ok{border-color:var(--good); background:rgba(46,204,113,.12);}
+/* النتيجة */
+.result-emoji{font-size:4rem; text-align:center; animation:pop .5s;}
+.result-score{text-align:center; font-size:2rem; font-weight:900; margin:6px 0;}
+.result-msg{text-align:center; color:var(--muted); font-size:1.1rem; margin-bottom:16px;}
+.stat-row{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;}
+.stat{flex:1; min-width:130px; background:var(--card); border-radius:14px; box-shadow:var(--shadow); padding:14px; text-align:center;}
+.stat .v{font-size:1.6rem; font-weight:900; color:var(--primary);}
+.stat .l{color:var(--muted); font-size:.85rem; font-weight:700;}
+.confetti{position:fixed; top:-40px; font-size:1.6rem; z-index:99; pointer-events:none; animation:confettiFall 2.6s linear forwards;}
+/* بطاقة الترحيب */
+.hero{
+  background:linear-gradient(135deg,#4a90d9,#7b5ce0); color:#fff; border-radius:20px;
+  padding:28px 20px; text-align:center; margin-bottom:16px; box-shadow:var(--shadow);
+}
+.hero h1{margin:0 0 8px; font-size:1.5rem;}
+.hero p{margin:0; opacity:.92; font-size:1rem;}
+.streak-banner{
+  background:linear-gradient(135deg,#ff7a45,#f1c40f); color:#fff; border-radius:14px;
+  padding:10px 16px; font-weight:900; text-align:center; margin-bottom:14px;
+}
+footer{text-align:center; color:var(--muted); font-size:.85rem; padding:20px;}
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<header>
+  <div class="logo" onclick="goHome()">🎓 مذاكرتي</div>
+  <div class="spacer"></div>
+  <div class="badge" id="pointsBadge">🏆 0</div>
+  <div class="badge fire" id="streakBadge">🔥 1</div>
+  <button class="hbtn" onclick="toggleDark()" id="darkBtn">🌙</button>
+  <button class="hbtn" onclick="fontSize(-1)" title="تصغير الخط">A−</button>
+  <button class="hbtn" onclick="fontSize(1)" title="تكبير الخط">A+</button>
+</header>
+
+<main>
+  <!-- الرئيسية -->
+  <section id="s-home" class="screen active">
+    <div class="hero">
+      <h1>أهلًا بك في مذاكرتي 👋</h1>
+      <p>اختر مرحلتك، ثم اختر المادة، وسيبدأ الشرح التفاعلي بالصوت والكتابة والأسئلة فورًا</p>
+    </div>
+    <div class="streak-banner" id="streakBanner">🔥 استمراريتك في التعلم تبدأ اليوم!</div>
+    <h1 class="page-title">📚 اختر مرحلتك الدراسية</h1>
+    <div class="grid stages" id="stagesGrid"></div>
+    <div class="stat-row" style="margin-top:20px;">
+      <div class="stat"><div class="v" id="statDone">0</div><div class="l">درس مكتمل ✔</div></div>
+      <div class="stat"><div class="v" id="statPoints">0</div><div class="l">نقطة 🏆</div></div>
+      <div class="stat"><div class="v" id="statAcc">—</div><div class="l">دقة الإجابات 🎯</div></div>
+    </div>
+  </section>
+
+  <!-- المواد -->
+  <section id="s-subjects" class="screen">
+    <button class="back-link" onclick="goHome()">→ رجوع للمراحل</button>
+    <h1 class="page-title" id="subjectsTitle"></h1>
+    <div class="grid subjects" id="subjectsGrid"></div>
+  </section>
+
+  <!-- قائمة الدروس -->
+  <section id="s-lessons" class="screen">
+    <button class="back-link" onclick="showScreen('s-subjects')">→ رجوع للمواد</button>
+    <h1 class="page-title" id="lessonsTitle"></h1>
+    <div id="lessonsList"></div>
+  </section>
+
+  <!-- الدرس -->
+  <section id="s-lesson" class="screen">
+    <button class="back-link" onclick="stopSpeak();showScreen('s-lessons')">→ رجوع للدروس</button>
+    <div class="card">
+      <div class="lesson-title-row">
+        <h2 id="lessonTitle"></h2>
+        <span class="pill" id="lessonMeta"></span>
+      </div>
+      <div class="lesson-body" id="lessonBody"></div>
+      <div class="action-row">
+        <button class="btn primary" onclick="startQuiz()">📝 ابدأ الأسئلة الآن</button>
+        <button class="btn soft" onclick="speakLesson(false)">🔊 اقرأ الشرح لي</button>
+        <button class="btn soft" onclick="speakLesson(true)">🐢 اقرأ ببطء وببساطة</button>
+        <button class="btn soft" onclick="stopSpeak()">⏹ إيقاف الصوت</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- الاختبار -->
+  <section id="s-quiz" class="screen">
+    <div class="progressbar"><i id="quizBar" style="width:0%"></i></div>
+    <div class="card">
+      <p class="q-text" id="qText"></p>
+      <div id="qOptions"></div>
+      <div id="qExplain"></div>
+      <div class="action-row">
+        <button class="btn good" id="nextBtn" onclick="nextQuestion()" style="display:none">التالي ←</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- النتيجة -->
+  <section id="s-result" class="screen">
+    <div class="card">
+      <div class="result-emoji" id="resultEmoji"></div>
+      <div class="result-score" id="resultScore"></div>
+      <div class="result-msg" id="resultMsg"></div>
+      <div class="action-row">
+        <button class="btn primary" onclick="startQuiz()">🔄 إعادة الاختبار</button>
+        <button class="btn soft" onclick="stopSpeak();showScreen('s-lessons')">📖 دروس أخرى</button>
+        <button class="btn soft" onclick="speakResult()">🔊 الاستماع للنتيجة</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>صُنع بحب لكل طالب يطمح للتفوق 💙 — يعمل بدون إنترنت عند تثبيته</footer>
+
+<script src="data.js"></script>
+<script>
+/* ================= الحالة والتخزين ================= */
+const store = {
+  get(k,d){ try{ const v=localStorage.getItem('mz_'+k); return v?JSON.parse(v):d; }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem('mz_'+k, JSON.stringify(v)); }catch(e){} }
+};
+let points = store.get('points',0);
+let doneLessons = store.get('done',[]);
+let answers = store.get('ans',{t:0,c:0});
+let fontScale = store.get('font',1);
+let dark = store.get('dark',false);
+
+/* ================= الموقع الصوتي ================= */
+function pickVoice(lang){
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v=>v.lang && v.lang.toLowerCase().startsWith(lang)) ||
+         vs.find(v=>v.lang && v.lang.toLowerCase().startsWith(lang.split('-')[0])) || null;
+}
+function speak(text, lang, rate){
+  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang; u.rate = rate;
+  const v = pickVoice(lang); if(v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+function stopSpeak(){ if('speechSynthesis' in window) speechSynthesis.cancel(); }
+
+/* ================= التنقل ================= */
+let cur = {si:0, sj:0, lk:0}; let quiz = null;
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0});
+}
+function goHome(){ stopSpeak(); renderHome(); showScreen('s-home'); }
+
+function renderHome(){
+  document.getElementById('stagesGrid').innerHTML = DATA.map((st,i)=>
+    `<button class="big-btn" style="background:${['#4a90d9','#7b5ce0','#e05571'][i]}" onclick="openSubjects(${i})">
+       <span class="ic">${['🟢','🔵','🔴'][i]}</span><span class="stage-name">${st.name.replace(/^[^\s]+\s/,'')}</span>
+     </button>`).join('');
+  updateHeader();
+}
+function openSubjects(si){
+  cur.si = si; stopSpeak();
+  document.getElementById('subjectsTitle').textContent = DATA[si].name + ' — اختر المادة';
+  document.getElementById('subjectsGrid').innerHTML = DATA[si].subjects.map((s,j)=>
+    `<button class="big-btn" style="background:${s.color}" onclick="openLessons(${j})">
+       <span class="ic">${s.icon}</span><span class="stage-name">${s.name}</span>
+     </button>`).join('');
+  showScreen('s-subjects');
+}
+function openLessons(sj){
+  cur.sj = sj; stopSpeak();
+  const s = DATA[cur.si].subjects[sj];
+  document.getElementById('lessonsTitle').textContent = s.icon + ' ' + s.name;
+  document.getElementById('lessonsList').innerHTML = s.lessons.map((L,k)=>{
+    const id = cur.si+'-'+sj+'-'+k;
+    const isDone = doneLessons.includes(id);
+    return `<button class="lesson-item" onclick="openLesson(${k})">
+      <span class="num" style="background:${s.color}">${k+1}</span>
+      <span class="lt">${L.t}<div class="qcount">${L.p.length} فقرات شرح • ${L.qs.length} أسئلة</div></span>
+      ${isDone?'<span class="done">✔</span>':''}
+    </button>`;}).join('');
+  showScreen('s-lessons');
+}
+function openLesson(lk){
+  cur.lk = lk; stopSpeak();
+  const L = DATA[cur.si].subjects[cur.sj].lessons[lk];
+  document.getElementById('lessonTitle').textContent = L.t;
+  document.getElementById('lessonMeta').textContent = DATA[cur.si].subjects[cur.sj].name;
+  document.getElementById('lessonBody').innerHTML = L.p.map(x=>`<p>${x}</p>`).join('');
+  showScreen('s-lesson');
+}
+function speakLesson(slow){
+  const L = DATA[cur.si].subjects[cur.sj].lessons[cur.lk];
+  const subj = DATA[cur.si].subjects[cur.sj].name;
+  const isEng = subj.includes('English') || subj.includes('الإنجليزية');
+  const lang = isEng ? 'en-US' : 'ar-SA';
+  const intro = isEng ? '' : (slow ? 'سأشرح لك الدرس ببطء وبأسلوب مبسط. ' : 'درس اليوم: ' + L.t + '. ');
+  speak(intro + L.p.join(' '), lang, slow ? 0.75 : 0.95);
+}
+
+/* ================= الاختبار ================= */
+function startQuiz(){
+  stopSpeak();
+  const L = DATA[cur.si].subjects[cur.sj].lessons[cur.lk];
+  quiz = {qs:L.qs, i:0, score:0, total:L.qs.length};
+  showScreen('s-quiz'); renderQuestion();
+}
+function renderQuestion(){
+  const q = quiz.qs[quiz.i];
+  document.getElementById('quizBar').style.width = (quiz.i/quiz.total*100)+'%';
+  document.getElementById('qText').textContent = `س${quiz.i+1}/${quiz.total}: ${q.q}`;
+  const box = document.getElementById('qOptions'); box.innerHTML='';
+  document.getElementById('qExplain').innerHTML='';
+  document.getElementById('nextBtn').style.display='none';
+  const order = q.o.map((_,i)=>i).sort(()=>Math.random()-.5); // خلط الخيارات
+  order.forEach(oi=>{
+    const b = document.createElement('button');
+    b.className='opt'; b.textContent = q.o[oi];
+    b.onclick = ()=>answer(b, oi, q);
+    box.appendChild(b);
+  });
+}
+function answer(btn, oi, q){
+  const btns = document.querySelectorAll('#qOptions .opt');
+  btns.forEach(b=>b.disabled=true);
+  const correct = oi === q.a;
+  if(correct){ btn.classList.add('correct'); quiz.score++; beep(880,.15); }
+  else{
+    btn.classList.add('wrong'); beep(180,.25);
+    btns.forEach((b,bi)=>{ if(b.textContent===q.o[q.a]) b.classList.add('correct'); });
+  }
+  answers.t++; if(correct) answers.c++; store.set('ans',answers);
+  document.getElementById('qExplain').innerHTML =
+    `<div class="explain ${correct?'ok':''}">💡 لماذا؟ ${q.e}</div>`;
+  document.getElementById('nextBtn').style.display='block';
+  document.getElementById('nextBtn').textContent = quiz.i===quiz.total-1 ? 'عرض النتيجة 🏁' : 'التالي ←';
+}
+function nextQuestion(){
+  if(quiz.i < quiz.total-1){ quiz.i++; renderQuestion(); }
+  else finishQuiz();
+}
+function finishQuiz(){
+  document.getElementById('quizBar').style.width='100%';
+  const pct = quiz.score/quiz.total;
+  const L = DATA[cur.si].subjects[cur.sj].lessons[cur.lk];
+  const id = cur.si+'-'+cur.sj+'-'+cur.lk;
+  const gained = quiz.score*20;
+  points += gained;
+  const first = !doneLessons.includes(id);
+  if(quiz.score >= Math.ceil(quiz.total*0.6) && first) doneLessons.push(id);
+  store.set('points',points); store.set('done',doneLessons);
+  let emoji,msg;
+  if(pct===1){ emoji='🏆'; msg='ممتاز! درجة كاملة — أنت نجم ساطع!'; }
+  else if(pct>=0.8){ emoji='🌟'; msg='رائع جدًا! اقتربت من الكمال، راجع الخطأ الوحيد.'; }
+  else if(pct>=0.6){ emoji='👍'; msg='جيد! راجع الشرح مرة أخرى وستتقن الدرس تمامًا.'; }
+  else if(pct>=0.4){ emoji='📖'; msg='لا بأس! أعد قراءة الشرح بالصوت ثم حاول مجددًا.'; }
+  else { emoji='💪'; msg='بداية شجاعة! الاستمرار هو سر النجاح، أعد المحاولة.'; }
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${quiz.score} / ${quiz.total}`;
+  document.getElementById('resultMsg').textContent = msg + ` (+%${gained} نقطة${first && quiz.score>=Math.ceil(quiz.total*0.6)?' • درس مكتمل ✔':''})`;
+  quiz.resultText = `نتيجتك في درس ${L.t}: ${quiz.score} من ${quiz.total}. ${msg}`;
+  showScreen('s-result');
+  if(pct>=0.6) confetti();
+  updateHeader();
+}
+function speakResult(){ if(quiz&&quiz.resultText) speak(quiz.resultText,'ar-SA',0.95); }
+
+/* ================= مؤثرات ================= */
+function beep(freq,dur){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value=freq; o.type='sine';
+    g.gain.setValueAtTime(.12,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);
+    o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
+function confetti(){
+  const em=['🎉','⭐','🌟','✨','🎊','💙'];
+  for(let i=0;i<36;i++){
+    const s=document.createElement('span');
+    s.className='confetti'; s.textContent=em[i%em.length];
+    s.style.right=Math.random()*100+'vw';
+    s.style.animationDelay=(Math.random()*.6)+'s';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),3400);
+  }
+}
+
+/* ================= الإعدادات ================= */
+function toggleDark(){ dark=!dark; store.set('dark',dark); applyDark(); }
+function applyDark(){
+  document.body.classList.toggle('dark',dark);
+  document.getElementById('darkBtn').textContent = dark?'☀️':'🌙';
+}
+function fontSize(d){
+  fontScale = Math.min(1.35, Math.max(.85, fontScale + d*.1));
+  document.documentElement.style.fontSize = (16*fontScale)+'px';
+  store.set('font',fontScale);
+}
+function updateHeader(){
+  document.getElementById('pointsBadge').textContent = '🏆 '+points;
+  const st = streak();
+  document.getElementById('streakBadge').textContent = '🔥 '+st.count;
+  document.getElementById('statDone').textContent = doneLessons.length;
+  document.getElementById('statPoints').textContent = points;
+  document.getElementById('statAcc').textContent = answers.t? Math.round(answers.c/answers.t*100)+'%' : '—';
+  const b = document.getElementById('streakBanner');
+  b.textContent = st.count>1 ? `🔥 استمراريتك ${st.count} أيام — أنت تتفوق يومًا بعد يوم!` :
+                  (doneLessons.length? '👏 أحسنت! أكمل درسًا اليوم للحفاظ على استمراريتك' : '🔥 استمراريتك في التعلم تبدأ اليوم!');
+}
+function streak(){
+  const today = new Date().toDateString();
+  let s = store.get('streak',{last:null,count:0});
+  if(s.last !== today){
+    const y = new Date(Date.now()-86400000).toDateString();
+    s.count = (s.last===y) ? s.count+1 : 1;
+    s.last = today; store.set('streak',s);
+  }
+  return s;
+}
+
+/* ================= التشغيل ================= */
+applyDark();
+document.documentElement.style.fontSize = (16*fontScale)+'px';
+if('speechSynthesis' in window) speechSynthesis.getVoices(); // تحميل الأصوات مباشرة
+streak();
+renderHome();
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
