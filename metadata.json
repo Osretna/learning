@@ -1,0 +1,6 @@
+{
+  "name": "مذاكرتي AI - المعلم الذكي للطلاب",
+  "description": "منصة تعليمية ذكية تجيب على أسئلة الطلاب وتشرح أي منهج بالعربية والإنجليزية مع إمكانية تحميل التطبيق مجاناً وبدون قيود.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
