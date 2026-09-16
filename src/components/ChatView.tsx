@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { Message, ExplanationMode, UploadedBook } from '../types';
 import { speakText, stopSpeaking, sound } from '../utils/audio';
+import { parseBookFileLocally } from '../utils/clientBookParser';
 
 interface ChatViewProps {
   messages: Message[];
@@ -245,6 +246,12 @@ export const ChatView: React.FC<ChatViewProps> = ({
             });
 
             if (!res.ok) {
+              if (res.status === 404) {
+                // Backend endpoint is not accessible (e.g. static host or server restart)
+                // Break to trigger in-browser local book parser immediately
+                res = null;
+                break;
+              }
               const contentType = res.headers.get('content-type') || '';
               let errMsg = '';
               if (contentType.includes('application/json')) {
@@ -267,6 +274,24 @@ export const ChatView: React.FC<ChatViewProps> = ({
         }
 
         if (!res) {
+          // If server returned 404 or failed, parse book directly in-browser using JSZip / PDF parser
+          try {
+            setUploadInfo(prev => prev ? {
+              ...prev,
+              stage: 'analyzing',
+              progressPercent: 88,
+              statusText: 'المعلم الذكي يقوم باستخراج وفهرسة ملفات وفصول الكتاب محلياً في المتصفح... 🧠',
+            } : null);
+
+            const localResult = await parseBookFileLocally(file);
+            if (localResult.success && localResult.books.length > 0) {
+              finalResult = localResult;
+              break;
+            }
+          } catch (localErr) {
+            console.warn('Direct local parsing attempt failed:', localErr);
+          }
+
           // If the last chunk failed due to network or timeout, check if the server already assembled the book
           if (isLastChunk) {
             try {
@@ -389,6 +414,43 @@ export const ChatView: React.FC<ChatViewProps> = ({
         }
       } catch (recoveryErr) {
         console.warn('Last-mile book recovery check error:', recoveryErr);
+      }
+
+      if (!recovered) {
+        // Fallback: Direct in-browser local parsing
+        try {
+          const localParsed = await parseBookFileLocally(file);
+          if (localParsed.success && localParsed.books.length > 0) {
+            recovered = true;
+            sound.playCorrect();
+            const newBooks = localParsed.books;
+            setUploadedBooks(prev => {
+              const filtered = prev.filter(b => !newBooks.some(nb => nb.name === b.name));
+              return [...newBooks, ...filtered];
+            });
+            const primary = newBooks[0];
+            setActiveBook(primary);
+            setUploadInfo({
+              fileName: file.name,
+              fileSizeStr,
+              stage: 'done',
+              statusText: `تم قراءة وفهرسة كتاب "${primary.realTitle || primary.name}" بنجاح! (${primary.pageCount} صفحة، ${primary.chapters.length} فصول)`,
+              progressPercent: 100,
+              book: primary,
+            });
+
+            onSendMessage(
+              `لقد قمت برفع كتاب "${primary.realTitle || primary.name}". يرجى تأكيد استيعابك الكامل لمحتوى صفحات وفصول الكتاب، وإعطائي نظرة عامة شاملة، وفهرس الدروس وأهم المفاهيم والقوانين الموجودة فيه، واشرح لي كيفية البدء في مذاكرته بالصوت والكتابة.`,
+              mode,
+              selectedGrade,
+              selectedSubject,
+              primary,
+              true
+            );
+          }
+        } catch (localCatchErr) {
+          console.warn('Local parsing in catch block error:', localCatchErr);
+        }
       }
 
       if (!recovered) {

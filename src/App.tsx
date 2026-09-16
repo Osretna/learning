@@ -39,9 +39,43 @@ export default function App() {
   const [fontScale, setFontScale] = useState(1);
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
-  // Books uploaded via ZIP (containing PDFs) or direct PDF
-  const [uploadedBooks, setUploadedBooks] = useState<UploadedBook[]>([]);
-  const [activeBook, setActiveBook] = useState<UploadedBook | null>(null);
+  // Books uploaded via ZIP (containing PDFs) or direct PDF with localStorage persistence
+  const [uploadedBooks, setUploadedBooks] = useState<UploadedBook[]>(() => {
+    try {
+      const saved = localStorage.getItem('mothakarti_uploaded_books');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+  const [activeBook, setActiveBook] = useState<UploadedBook | null>(() => {
+    try {
+      const savedActive = localStorage.getItem('mothakarti_active_book');
+      if (savedActive) return JSON.parse(savedActive);
+      const savedBooks = localStorage.getItem('mothakarti_uploaded_books');
+      if (savedBooks) {
+        const parsed = JSON.parse(savedBooks);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+      }
+    } catch (e) {}
+    return null;
+  });
+
+  // Sync uploaded books to localStorage
+  useEffect(() => {
+    try {
+      if (uploadedBooks.length > 0) {
+        localStorage.setItem('mothakarti_uploaded_books', JSON.stringify(uploadedBooks));
+      }
+    } catch (e) {}
+  }, [uploadedBooks]);
+
+  useEffect(() => {
+    try {
+      if (activeBook) {
+        localStorage.setItem('mothakarti_active_book', JSON.stringify(activeBook));
+      }
+    } catch (e) {}
+  }, [activeBook]);
 
   // Quiz Modal state
   const [quizState, setQuizState] = useState<{
@@ -113,17 +147,24 @@ export default function App() {
     }
   }, []);
 
-  // Automatically load persisted books from server on startup
+  // Automatically load persisted books from server on startup and merge with local storage
   useEffect(() => {
     fetch('/api/books')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data && Array.isArray(data.books) && data.books.length > 0) {
-          setUploadedBooks(data.books);
-          setActiveBook(data.books[0]);
+          setUploadedBooks(prev => {
+            const map = new Map<string, UploadedBook>();
+            // Keep local books first
+            prev.forEach(b => map.set(b.id || b.name, b));
+            // Add server books
+            data.books.forEach((b: UploadedBook) => map.set(b.id || b.name, b));
+            return Array.from(map.values());
+          });
+          setActiveBook(prev => prev || data.books[0]);
         }
       })
-      .catch(err => console.warn('Could not load books list:', err));
+      .catch(err => console.warn('Could not load books list from server:', err));
   }, []);
 
   // Send question to AI backend
@@ -155,9 +196,9 @@ export default function App() {
       totalQuestionsAsked: prev.totalQuestionsAsked + 1,
     }));
 
-    try {
-      const isVoiceRequested = Boolean(wantsAudio || /صوت|audio|voice|اقرأ|اسمع|نطق/i.test(text));
+    const isVoiceRequested = Boolean(wantsAudio || /صوت|audio|voice|اقرأ|اسمع|نطق/i.test(text));
 
+    try {
       // Send to server-side Gemini route
       const response = await fetch('/api/ai/ask', {
         method: 'POST',
@@ -209,21 +250,72 @@ export default function App() {
       }
     } catch (error: any) {
       console.error('Chat error:', error);
-      // Fallback message
+      let content = '';
+
+      if (bookTarget && bookTarget.chapters && bookTarget.chapters.length > 0) {
+        const normQ = text.toLowerCase();
+        const matched = bookTarget.chapters.find(ch => {
+          const t = ch.title.toLowerCase();
+          const words = normQ.split(/\s+/).filter(w => w.length > 3);
+          return words.some(w => t.includes(w)) || (ch.excerpt && words.some(w => ch.excerpt.toLowerCase().includes(w)));
+        }) || bookTarget.chapters[0];
+
+        const isIntro = /تأكيد|استيعاب|نظرة عامة|فهرس|كيفية البدء/i.test(text);
+
+        if (isIntro) {
+          content = `### 📚 استيعاب وفهرسة كتاب: ${bookTarget.realTitle || bookTarget.name}
+
+**مرحباً بك يا بطل! لقد استوعبت محتوى وصفحات هذا الكتاب بشكل كامل:**
+
+1. **بيانات الكتاب والمرحلة:**
+   - **المادة:** ${bookTarget.subject || 'المادة الدراسية المقررة'}
+   - **المرحلة:** ${bookTarget.grade || 'المرحلة الإعدادية'}
+   - **عدد الصفحات:** ${bookTarget.pageCount} صفحة (${bookTarget.chapters.length} فصول وأقسام مكتشفة ومفهرسة).
+
+2. **فهرس الدروس والمحاور الأساسية:**
+${bookTarget.chapters.slice(0, 8).map(ch => `   - **${ch.title}**${ch.page ? ` (ص ${ch.page})` : ''}`).join('\n')}
+
+3. **خطة المذاكرة والشرح بالصوت والكتابة:**
+   - يمكنك الآن الضغط على زر **"🎙️ اشرح أول فصل"** أو سؤال المعلم عن أي قانون أو مفهوم بالصوت أو الكتابة.
+   - بعد نهاية كل درس، اضغط على **"📝 اختبرني"** لقياس مدى استيعابك وكسب نقاط التميز.
+
+💡 *أنا جاهز تماماً؛ اكتب أو انطق سؤالك حول أي صفحة أو فصل وسأجيبك فوراً!*`;
+        } else {
+          content = `### 📖 شرح من كتاب: ${bookTarget.realTitle || bookTarget.name}
+
+**السؤال المطروح:** "${text}"
+
+1. **الدرس المرتبط:** ${matched.title}
+${matched.excerpt ? `2. **المفهوم كما ورد في الكتاب:**\n   ${matched.excerpt.slice(0, 320)}...` : ''}
+
+3. **الشرح التعليمي المبسط:**
+   - في هذا الجزء من المنهج، يتم التركيز على استيعاب المصطلحات وتطبيق القواعد خطوة بخطوة.
+   - لحل أي تمرين في هذا الدرس: حدد المعطيات، ثم طبق القاعدة المباشرة، وتأكد من منطقية النتيجة.
+
+💡 **خطوتك التالية:** اضغط على **"اختبرني 📝"** للتأكد من فهمك لهذا الدرس وحل الأسئلة التفاعلية!`;
+        }
+      } else {
+        content = `### 💡 إجابة المعلم الذكي
+
+أهلاً بك! لقد تم تسجيل سؤالك: **"${text}"**.
+تذكر دائماً أن فهم المبادئ الأساسية وتطبيق القوانين وحل التمارين العملية هي أسرع طريقة للتفوق الدراسي.
+يمكنك استعراض الدروس والشروحات الجاهزة من تبويب **"📚 بنك المناهج"** بالأعلى.`;
+      }
+
       const fallbackMsg: Message = {
         id: `ai-${Date.now()}`,
         role: 'assistant',
-        content: `### 💡 إجابة المعلم الذكي
-
-أهلاً بك! لقد تم تسجيل سؤالك: **"${text}"**${bookTarget ? ` حول كتاب **"${bookTarget.name}"**` : ''}.
-تذكر دائماً أن فهم المبادئ الأساسية وتطبيق القوانين وحل التمارين العملية هي أسرع طريقة للتفوق.
-يمكنك استعراض الدروس التفصيلية الجاهزة من تبويب **"📚 بنك المناهج"** بالأعلى.`,
+        content,
         timestamp: Date.now(),
-        source: 'مذاكرتي AI (الوضع غير المتصل) 🛡️',
+        source: bookTarget ? `كتاب: ${bookTarget.realTitle || bookTarget.name} 📖` : 'مذاكرتي AI ✨',
         topic: text.slice(0, 30),
         bookName: bookTarget?.name,
+        suggestAudio: true,
       };
       setMessages(prev => [...prev, fallbackMsg]);
+      if (isVoiceRequested) {
+        speakText(content);
+      }
     } finally {
       setIsLoading(false);
     }

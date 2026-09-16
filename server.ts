@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
-import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
@@ -11,8 +10,8 @@ import { PDFParse } from 'pdf-parse';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Safe path derivation compatible with both ESM (tsx dev) and bundled CommonJS (production start)
+const appDir = process.cwd();
 
 const app = express();
 const PORT = 3000;
